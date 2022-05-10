@@ -18,6 +18,7 @@ package kuberuntime
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -103,8 +104,25 @@ type startSpec struct {
 	container          *v1.Container
 	ephemeralContainer *v1.EphemeralContainer
 }
+type SidecarConfig struct {
+	HostContainerName    string
+	SidecarContainerName string
+}
 
-func containerStartSpec(c *v1.Container) *startSpec {
+func containerStartSpec(pod *v1.Pod, c *v1.Container) *startSpec {
+	annotation := pod.GetAnnotations()
+	if sidecarConfigStr, ok := annotation["sa.alibaba.com/sidecarConf"]; ok {
+		var conf SidecarConfig
+		if err := json.Unmarshal([]byte(sidecarConfigStr), &conf); err == nil {
+			if conf.SidecarContainerName == c.Name {
+				return &startSpec{
+					container:          c,
+					ephemeralContainer: &v1.EphemeralContainer{TargetContainerName: conf.HostContainerName},
+				}
+			}
+		}
+	}
+
 	return &startSpec{container: c}
 }
 

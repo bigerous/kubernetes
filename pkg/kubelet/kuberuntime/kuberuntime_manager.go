@@ -923,7 +923,7 @@ func (m *kubeGenericRuntimeManager) SyncPod(pod *v1.Pod, podStatus *kubecontaine
 	// Step 6: start the init container.
 	if container := podContainerChanges.NextInitContainerToStart; container != nil {
 		// Start the next init container.
-		if err := start("init container", metrics.InitContainer, containerStartSpec(container)); err != nil {
+		if err := start("init container", metrics.InitContainer, containerStartSpec(pod, container)); err != nil {
 			return
 		}
 
@@ -933,7 +933,7 @@ func (m *kubeGenericRuntimeManager) SyncPod(pod *v1.Pod, podStatus *kubecontaine
 
 	// Step 7: start containers in podContainerChanges.ContainersToStart.
 	for _, idx := range podContainerChanges.ContainersToStart {
-		start("container", metrics.Container, containerStartSpec(&pod.Spec.Containers[idx]))
+		start("container", metrics.Container, containerStartSpec(pod, &pod.Spec.Containers[idx]))
 	}
 
 	return
